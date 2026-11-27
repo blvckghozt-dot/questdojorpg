@@ -146,14 +146,15 @@ function App() {
 function HomePage() {
   var p = Store.get(), lv = myLevel(), prog = QC.levelProgress(p.exp, Dojo.LEVEL_REQS), stats = QC.stats(lv), wk = Store.week();
   var as = useState(''), anim = as[0], setAnim = as[1];
-  var play = function (a) { setAnim(a); sfx(a === 'attack' ? fxOf(me(), lv) : 'hit'); setTimeout(function () { setAnim(''); }, 850); };
+  var play = function (a) { setAnim(a); sfx({ attack: fxOf(me(), lv), hit: 'hit', win: 'victory', lose: 'wrong' }[a]); setTimeout(function () { setAnim(''); }, a === 'win' || a === 'lose' ? 2400 : 850); };
   var T = QC.thresholds(Dojo.LEVEL_REQS), nextStage = QC.STAGES.filter(function (x) { return x > lv; })[0];
   var alive = Dojo.DUNGEONS.filter(function (d) { return Store.isAlive(d.id); }).length;
   return html`<section class="page home">
     <div class="home-grid">
       <div class="panel pad stack center">
         <div class="status-art"><${Hero} student=${me()} level=${lv} size=${220} anim=${anim} idle=${!anim} fx=${fxOf(me(), lv)} fxColor=${QC.elemById[p.element].color} /></div>
-        <div class="row gap"><button class="btn sm" onClick=${function () { play('attack'); }}>${L('ท่าโจมตี', 'Attack')}</button><button class="btn sm" onClick=${function () { play('hit'); }}>${L('ท่าโดนโจมตี', 'Hit')}</button></div>
+        <div class="row gap wrap center-row"><button class="btn sm" onClick=${function () { play('attack'); }}>${L('ท่าโจมตี', 'Attack')}</button><button class="btn sm" onClick=${function () { play('hit'); }}>${L('ท่าโดนโจมตี', 'Hit')}</button>
+          <button class="btn sm" onClick=${function () { play('win'); }}>${L('ท่าชนะ', 'Victory')}</button><button class="btn sm" onClick=${function () { play('lose'); }}>${L('ท่าแพ้', 'Defeat')}</button></div>
       </div>
       <div class="panel pad stack">
         <div class="row between wrap"><div><b class="h2">${p.nick}</b> <button class="link small" onClick=${function () { setUI({ modal: 'rename' }); }}>${L('เปลี่ยนชื่อ', 'Rename')}</button></div><span class="badge">${raceName(p.race)} • ${elemName(p.element)}</span></div>
@@ -313,7 +314,7 @@ function ArenaPage() {
       <p class="muted tiny">${L('ใช้พลังงาน 1 ขีดเมื่อเจอคู่ ถ้ารอ 60 วินาทีแล้วไม่เจอ จะยกเลิกโดยไม่เสียพลังงาน ไม่มีบอท', 'A duel uses 1 energy once matched. No match in 60 s cancels without using energy. No bots.')}</p>
     </div>
     <div class="panel pad stack"><h3 class="h3">${L('ตารางแพ้ทางประจำสัปดาห์', 'This week\'s matchups')}</h3>
-      <p class="small muted">${L('ทุกเผ่าและทุกธาตุชนะทาง 2 แบบ แพ้ทาง 2 แบบ ดาเมจ ±10% สุ่มใหม่ทุกวันจันทร์ 00:00', 'Every race and element is strong against 2 and weak against 2 (±10% damage). Re-rolled every Monday 00:00.')}</p>
+      <p class="small muted">${L('ทุกเผ่าและทุกธาตุชนะทาง 2 แบบ แพ้ทาง 2 แบบ ดาเมจ ±' + Dojo.MATCH_PCT + '% สุ่มใหม่ทุกวันจันทร์ 00:00', 'Every race and element is strong against 2 and weak against 2 (±' + Dojo.MATCH_PCT + '% damage). Re-rolled every Monday 00:00.')}</p>
       <${MuTable} table=${mu.elem} items=${QC.ELEMENTS} nameFn=${elemName} /><${MuTable} table=${mu.race} items=${QC.RACES} nameFn=${raceName} /></div>
   </section>`;
 }

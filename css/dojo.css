@@ -98,3 +98,4 @@ table.grid.mu,table.grid.rank{width:100%;min-width:0}.grid.mu th:first-child{tex
   .duel .qtext{font-size:1.8rem}.duel.gk .qtext{font-size:1.05rem}.duel.gk .choice{font-size:.9rem}
   .duel .vs{font-size:2rem}
 }
+.center-row{justify-content:center}

@@ -55,7 +55,7 @@
     };
     return mcache[week];
   }
-  var MATCH_PCT = 10;
+  var MATCH_PCT = 5; // advantage / disadvantage per matchup (element and race each)
   function matchupPct(att, def, week) {
     var mu = matchups(week);
     return { e: QC.relationIn(mu.elem, att.element, def.element) * MATCH_PCT, r: QC.relationIn(mu.race, att.race, def.race) * MATCH_PCT };
