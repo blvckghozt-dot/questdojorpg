@@ -7,7 +7,7 @@ routes = [ { pattern = "questdojorpg.mathaday.app/api/*", zone_name = "mathaday.
 [[d1_databases]]
 binding = "DB"
 database_name = "questdojo"
-database_id = "TO_BE_CREATED"
+database_id = "e677a635-0926-4ced-9e25-b841ed44cf4e"
 
 # Read-only use: looks up the Math a Day sign-in session (account.mathaday.app) to know who is playing.
 [[d1_databases]]
@@ -21,4 +21,4 @@ class_name = "Lobby"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["Lobby"]
+new_sqlite_classes = ["Lobby"]
