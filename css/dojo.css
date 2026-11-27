@@ -68,7 +68,7 @@ table.grid.mu,table.grid.rank{width:100%;min-width:0}.grid.mu th:first-child{tex
   .dj-exp small{display:none}
   .battle-page .choice{font-size:1.2rem}
 }
-@media (max-width:420px){.race-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dj-me-txt small{display:none}}
+@media (max-width:420px){.dj-me-txt small{display:none}.race-card{padding:6px 2px;font-size:.74rem}.race-card .hero.portrait{width:44px!important;height:44px!important}.create-preview .status-art .hero{width:170px!important;height:170px!important}}
 .dj-exp .expbar{flex:none;width:100%}
 @media (max-width:760px){
   .dg-run{gap:6px}.dg-run .battle-top{font-size:.85rem}.dg-run .battle-top small{display:none}
@@ -99,3 +99,22 @@ table.grid.mu,table.grid.rank{width:100%;min-width:0}.grid.mu th:first-child{tex
   .duel .vs{font-size:2rem}
 }
 .center-row{justify-content:center}
+/* install banner */
+.install-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:linear-gradient(90deg,#2a2010,#1a1430);border-top:1px solid var(--gold);position:relative;z-index:6}
+.install-bar img{border-radius:9px;flex:none}.install-txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}.install-txt b{font-size:.92rem}.install-txt small{font-size:.74rem;color:#d9cfb2}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}.steps li{display:flex;gap:10px;align-items:flex-start}
+.steps i{font-style:normal;flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--gold);color:#1a1206;font:700 .9rem var(--f-data)}.steps small{display:block;color:var(--muted)}
+/* support */
+.sup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:18px;align-items:start;max-width:980px;margin:0 auto}
+.sup p{margin:0;line-height:1.65}.cup{font-size:2.6rem;line-height:1}
+.contact{display:flex;flex-direction:column;gap:6px;margin-top:4px}.fb-btn{background:#1877f2;border-color:#1877f2;color:#fff;align-self:flex-start;text-decoration:none}
+.qrcard{background:#fff;color:#1a1a1a;border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px;width:100%}
+.qrcard img{width:100%;height:auto;image-rendering:auto}.qrname{display:flex;flex-direction:column;align-items:center}.qrname span{font-size:.75rem;color:#666}.qrsub{font-size:.78rem;color:#555;text-align:center}
+.thanks{color:var(--gold2);text-align:center}
+.credit a{color:var(--gold2)}.credit .link{font-size:inherit}
+@media (max-width:760px){.sup{grid-template-columns:minmax(0,1fr)}.sup-r{order:-1}}
+@media (max-width:760px){
+  .ann-stack{top:auto;bottom:calc(64px + env(safe-area-inset-bottom));right:8px;left:8px;width:auto;gap:6px}
+  .ann{padding:6px 6px 6px 8px;gap:8px}.ann-art .hero{width:44px!important;height:44px!important}.ann-text b{font-size:.92rem}.ann-text span{font-size:.76rem}
+  .install-bar{padding:6px 10px}.install-txt small{display:none}
+}

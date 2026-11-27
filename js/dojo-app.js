@@ -115,7 +115,7 @@ function NavBar() {
       <img src=${'ui/icon-' + n.icon + '.png'} alt="" width="22" height="22" /><span>${L(n.th, n.en)}</span></button>`;
   })}</nav>`;
 }
-var SCENE_OF = { home: 'hall', dungeon: 'game', arena: 'arena', board: 'reports', settings: 'avatars' };
+var SCENE_OF = { home: 'hall', dungeon: 'game', arena: 'arena', board: 'reports', settings: 'avatars', support: 'hall' };
 function App() {
   useApp();
   useEffect(function () { var t = setInterval(uiEmit, 30000); return function () { clearInterval(t); }; }, []);
@@ -129,14 +129,16 @@ function App() {
   if (!p) return html`<div class="dj-app create-app"><${CreateScreen} /><${Toasts} /><${Announcements} /><${ConfirmHost} /></div>`;
   var page = UI.page, inBattle = (page === 'dungeon' && UI.run) || (page === 'arena' && UI.duel);
   var body = page === 'dungeon' ? (UI.run ? html`<${DungeonRun} key=${UI.run.k} d=${Dojo.dungeonById[UI.run.id]} />` : html`<${DungeonPage} />`)
-    : page === 'arena' ? (UI.duel ? html`<${Duel} key=${UI.duel.k} mode=${UI.duel.mode} />` : html`<${ArenaPage} />`) : page === 'board' ? html`<${BoardPage} />` : page === 'settings' ? html`<${SettingsPage} />` : html`<${HomePage} />`;
+    : page === 'arena' ? (UI.duel ? html`<${Duel} key=${UI.duel.k} mode=${UI.duel.mode} />` : html`<${ArenaPage} />`) : page === 'board' ? html`<${BoardPage} />` : page === 'settings' ? html`<${SettingsPage} />` : page === 'support' ? html`<${SupportPage} />` : html`<${HomePage} />`;
   var scene = page === 'dungeon' && UI.run ? Scenes.battle(Dojo.dungeonById[UI.run.id].mode) : Scenes.bg(SCENE_OF[page] || 'hall');
   return html`<div class="dj-app">
     <${TopBar} />
     ${st.status === 'offline' ? html`<div class="banner warn">${L('ออฟไลน์: เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'Offline: cannot reach the server')} <button class="link" onClick=${Store.boot}>${L('ลองใหม่', 'Retry')}</button></div>` : null}
     <main class="dj-main"><div class="scene" style=${'--scene:' + scene}></div><div class="dj-page">${body}</div></main>
+    ${inBattle ? null : html`<${InstallBanner} />`}
     ${inBattle ? null : html`<${NavBar} />`}
     ${UI.modal === 'week' ? html`<${WeekModal} onClose=${function () { setUI({ modal: null }); }} />` : null}
+    ${UI.modal === 'install' ? html`<${InstallModal} onClose=${function () { setUI({ modal: null }); }} />` : null}
     ${UI.modal === 'rename' ? html`<${RenameModal} onClose=${function () { setUI({ modal: null }); }} />` : null}
     <${LinkModal} />
     <${Toasts} /><${Announcements} /><${ConfirmHost} /></div>`;
@@ -171,7 +173,7 @@ function HomePage() {
         <div class="row gap wrap"><button class="btn gold" onClick=${function () { setUI({ page: 'dungeon' }); }}>${L('ไปดันเจี้ยน', 'Dungeons')}</button><button class="btn" onClick=${function () { setUI({ page: 'arena' }); }}>${L('ไปลานประลอง', 'Arena')}</button></div>
         <${MyMatchups} />
       </div>
-    </div></section>`;
+    </div><${Credit} /></section>`;
 }
 function muRow(table, id, nameFn) {
   var beats = table[id] || [], loses = Object.keys(table).filter(function (k) { return (table[k] || []).indexOf(id) >= 0; });
@@ -481,6 +483,70 @@ function LinkModal() {
     <div class="row gap wrap"><button class="btn gold" onClick=${Store.skipLink}>${L('ใช้ตัวในบัญชี', 'Use the account one')}</button><button class="btn" onClick=${doLink}>${L('ใช้ตัวในเครื่องนี้', 'Use this device\'s')}</button></div></${Modal}>`;
 }
 
+// ================= INSTALL TO HOME SCREEN =================
+var Install = { evt: null };
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); Install.evt = e; uiEmit(); });
+window.addEventListener('appinstalled', function () { Install.evt = null; Store.lsSet('qd.installed', '1'); toast(L('ติดตั้ง QuestDojo แล้ว เปิดจากไอคอนบนหน้าจอได้เลย', 'QuestDojo installed. Open it from your home screen.')); uiEmit(); });
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () { });
+function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+function deviceKind() { var u = navigator.userAgent; if (/iphone|ipad|ipod/i.test(u) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios'; if (/android/i.test(u)) return 'android'; return 'pc'; }
+async function installNow() {
+  if (Install.evt) { Install.evt.prompt(); var c = await Install.evt.userChoice.catch(function () { return {}; }); if (c && c.outcome === 'accepted') Store.lsSet('qd.installed', '1'); Install.evt = null; uiEmit(); }
+  else setUI({ modal: 'install' });
+}
+function InstallBanner() {
+  if (isStandalone() || Store.lsGet('qd.installed')) return null;
+  var later = +(Store.lsGet('qd.installLater') || 0);
+  if (Date.now() - later < 3 * 864e5) return null;
+  if (deviceKind() === 'pc' && !Install.evt) return null;
+  return html`<div class="install-bar" role="region" aria-label=${L('ติดตั้งแอป', 'Install the app')}>
+    <img src="icons/icon-192.png" alt="" width="40" height="40" />
+    <div class="install-txt"><b>${L('ติดตั้ง QuestDojo ลงเครื่อง', 'Install QuestDojo')}</b><small>${L('เปิดเล่นจากหน้าจอได้เหมือนแอป เต็มจอ ไม่ต้องพิมพ์ลิงก์', 'Open it from your home screen like an app, full screen')}</small></div>
+    <button class="btn gold sm" onClick=${installNow}>${Install.evt ? L('ติดตั้ง', 'Install') : L('วิธีติดตั้ง', 'How to')}</button>
+    <button class="icon-btn xs" aria-label=${L('ไว้ทีหลัง', 'Later')} onClick=${function () { Store.lsSet('qd.installLater', String(Date.now())); uiEmit(); }}>✕</button></div>`;
+}
+function InstallModal(p) {
+  var ks = useState(deviceKind()), k = ks[0], setK = ks[1];
+  var step = function (n, t, sub) { return html`<li><i>${n}</i><div><b>${t}</b>${sub ? html`<small>${sub}</small>` : null}</div></li>`; };
+  var steps = {
+    ios: [step(1, L('เปิดลิงก์นี้ด้วย Safari', 'Open this page in Safari'), L('ถ้าเปิดจาก LINE หรือ Facebook ให้กด ⋯ แล้วเลือก "เปิดใน Safari"', 'From LINE or Facebook, tap ⋯ then "Open in Safari"')),
+      step(2, L('กดปุ่มแชร์ ⬆︎ ด้านล่างจอ', 'Tap the Share button ⬆︎')), step(3, L('เลื่อนลงแล้วเลือก "เพิ่มไปยังหน้าจอโฮม"', 'Choose "Add to Home Screen"')), step(4, L('กด "เพิ่ม"', 'Tap "Add"'), L('จะมีไอคอนอาจารย์แม็กบนหน้าจอ', 'The Master Max icon appears on your home screen'))],
+    android: [step(1, L('เปิดลิงก์นี้ด้วย Chrome', 'Open this page in Chrome')), step(2, L('กดเมนู ⋮ มุมขวาบน', 'Tap the ⋮ menu (top right)')), step(3, L('เลือก "ติดตั้งแอป" หรือ "เพิ่มลงในหน้าจอหลัก"', 'Choose "Install app" or "Add to Home screen"')), step(4, L('กด "ติดตั้ง"', 'Tap "Install"'))],
+    pc: [step(1, L('เปิดด้วย Chrome หรือ Edge', 'Open in Chrome or Edge')), step(2, L('กดไอคอนติดตั้ง ⊕ ที่ช่องที่อยู่เว็บด้านขวา', 'Click the install icon ⊕ at the right of the address bar')), step(3, L('กด "ติดตั้ง"', 'Click "Install"'))]
+  };
+  return html`<${Modal} title=${L('ติดตั้ง QuestDojo ลงเครื่อง', 'Install QuestDojo')} onClose=${p.onClose} footer=${html`<button class="btn gold" onClick=${p.onClose}>${L('เข้าใจแล้ว', 'Got it')}</button>`}>
+    ${Install.evt ? html`<button class="btn gold big" onClick=${installNow}>📲 ${L('กดติดตั้งเลย', 'Install now')}</button>` : null}
+    <div class="seg"><button class=${k === 'ios' ? 'on' : ''} onClick=${function () { setK('ios'); }}>iPhone / iPad</button><button class=${k === 'android' ? 'on' : ''} onClick=${function () { setK('android'); }}>Android</button><button class=${k === 'pc' ? 'on' : ''} onClick=${function () { setK('pc'); }}>${L('คอมพิวเตอร์', 'Computer')}</button></div>
+    <ol class="steps">${steps[k]}</ol>
+    ${k === 'ios' ? html`<p class="muted small">${L('บน iPhone ถ้ายังไม่ได้เข้าสู่ระบบ ตัวละครใน Safari กับในแอปที่ติดตั้งจะแยกกัน แนะนำให้เข้าสู่ระบบด้วย Google หรือใช้ "รหัสเครื่อง" ในหน้าตั้งค่า', 'On iPhone, Safari and the installed app keep separate data. Sign in with Google, or use the device key in Settings.')}</p>` : null}
+  </${Modal}>`;
+}
+
+// ================= SUPPORT (buy the developer a coffee) =================
+var FB_URL = 'https://www.facebook.com/share/19k43qXSV7/';
+function SupportPage() {
+  return html`<section class="page support"><div class="panel pad sup">
+    <div class="sup-l stack">
+      <div class="cup">☕</div>
+      <h2 class="h2">${L('เลี้ยงกาแฟครูสักแก้วไหมครับ', 'Buy the teacher a coffee?')}</h2>
+      <p>${L('สวัสดีครับ ผม ', 'Hi, I’m ')}<b>${L('ครูอภิวัฒน์ ปาวงค์', 'Kru Apiwat Pawong')}</b> ${L('ครูคณิตที่ขี้เกียจจนต้องหาวิธีให้ AI มาช่วยให้ตัวเองสบายที่สุด 😄', 'a maths teacher lazy enough to get AI to do the heavy lifting 😄')}</p>
+      <p>${L('QuestDojo ทำขึ้นเพราะอยากให้นักเรียนได้ฝึกคิดเลขอย่างสนุก ได้เก็บเลเวล ลงดันเจี้ยน และประลองกับเพื่อนทั่วประเทศ ฟรี ๆ', 'QuestDojo exists so students can practise maths for fun: level up, clear dungeons and duel friends across the country, for free.')}</p>
+      <p><b>${L('หวังว่าเกมนี้จะมีประโยชน์กับนักเรียนและคุณครูนะครับ', 'I hope it helps students and teachers')}</b> 🙏</p>
+      <p>${L('ถ้าเล่นแล้วถูกใจ อยากสนับสนุนค่ากาแฟให้ผมมีแรงดูแลและพัฒนาต่อ สแกนได้ตามความสมัครใจเลยครับ ไม่บังคับ เล่นฟรีเหมือนเดิมตลอด', 'If you enjoy it and want to chip in for coffee so I can keep it running, scan whenever you like. It is never required and the game stays free.')}</p>
+      <div class="contact"><b>${L('ติดต่อ แจ้งปัญหา หรือเสนอฟีเจอร์', 'Contact, report a problem or suggest a feature')}</b>
+        <a class="btn fb-btn" href=${FB_URL} target="_blank" rel="noopener">Facebook : Apiwat Pawong</a></div>
+    </div>
+    <div class="sup-r stack center">
+      <div class="qrcard"><img src="img/promptpay.png" alt=${L('QR พร้อมเพย์ นายอภิวัฒน์ ปาวงค์', 'PromptPay QR, Mr. Apiwat Pawong')} width="260" />
+        <div class="qrname"><span>${L('ชื่อบัญชี', 'Account name')}</span><b>${L('นายอภิวัฒน์ ปาวงค์', 'Mr. Apiwat Pawong')}</b></div>
+        <div class="qrsub">${L('พร้อมเพย์ · สแกนผ่านแอปธนาคารได้ทุกธนาคาร', 'PromptPay · scan with any Thai banking app')}</div></div>
+      <p class="thanks">${L('ขอบคุณทุกแก้วกาแฟ และทุกกำลังใจครับ 💛', 'Thank you for every coffee and every bit of encouragement 💛')}</p>
+    </div></div></section>`;
+}
+function Credit() {
+  return html`<p class="credit">QuestDojo RPG • ${L('พัฒนาโดย ครูอภิวัฒน์ ปาวงค์', 'by Kru Apiwat Pawong')} • <a href=${FB_URL} target="_blank" rel="noopener">Facebook</a> • <button class="link" onClick=${function () { setUI({ page: 'support' }); }}>☕ ${L('เลี้ยงกาแฟผู้พัฒนา', 'Buy the developer a coffee')}</button></p>`;
+}
+
 // ================= SETTINGS =================
 function SettingsPage() {
   var st = Store.settings(), ks = useState(''), key = ks[0], setKey = ks[1], show = useState(false), shown = show[0], setShown = show[1];
@@ -503,7 +569,11 @@ function SettingsPage() {
       ${shown ? html`<code class="devkey">${Store.deviceKey()}</code>` : null}</div>` : null}
     ${!a ? html`<label class="field"><span>${L('ใช้รหัสเครื่องจากเครื่องอื่น', 'Use a device key from another device')}</span><div class="row gap"><input type="text" value=${key} placeholder="64 ${L('ตัวอักษร', 'characters')}" onInput=${function (e) { setKey(e.target.value); }} /><button class="btn sm" disabled=${key.trim().length !== 64} onClick=${useKey}>${L('ใช้', 'Use')}</button></div></label>` : null}
   </div>
-  <p class="credit">QuestDojo RPG • ${L('ภาคต่อของ QuestClass RPG', 'a QuestClass RPG companion')}</p></section>`;
+  <div class="panel pad stack"><h3 class="h3">${L('แอปและผู้พัฒนา', 'App & developer')}</h3>
+    ${isStandalone() ? html`<p class="small good-text">✓ ${L('ติดตั้งลงเครื่องแล้ว', 'Installed on this device')}</p>` : html`<button class="btn" onClick=${installNow}>📲 ${L('ติดตั้ง QuestDojo ลงเครื่อง', 'Install QuestDojo')}</button>`}
+    <button class="btn" onClick=${function () { setUI({ page: 'support' }); }}>☕ ${L('เลี้ยงกาแฟผู้พัฒนา', 'Buy the developer a coffee')}</button>
+  </div>
+  <${Credit} /></section>`;
 }
 
 Store.boot();
