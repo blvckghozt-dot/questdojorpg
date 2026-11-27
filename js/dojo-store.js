@@ -117,7 +117,11 @@ var Store = (function () {
 
   var player = validPlayer(parse(lsGet(PKEY)));
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { }
-  function save() { if (!lsSet(PKEY, JSON.stringify(player))) toastSaveFail(); emit(); }
+  var onSaved = null; // set by Cloud: called after every local save so a signed-in player is pushed to the account
+  function save(silent) { if (player) player.savedAt = Date.now(); if (!lsSet(PKEY, JSON.stringify(player))) toastSaveFail(); emit(); if (onSaved && !silent) onSaved(player); }
+  // replace the player with a copy from the account (no push back)
+  function adopt(p) { var v = validPlayer(JSON.parse(JSON.stringify(p))); if (!v) return false; player = v; lsSet(PKEY, JSON.stringify(player)); emit(); return true; }
+  function setOnSaved(f) { onSaved = f; }
   function toastSaveFail() { if (typeof toast === 'function') toast(UI.lang === 'en' ? 'Could not save on this device' : 'บันทึกลงเครื่องไม่สำเร็จ', 'err'); }
 
   function validPlayer(p) {
@@ -170,10 +174,12 @@ var Store = (function () {
     player = p; save(); return p;
   }
   function reset() { player = null; lsDel(PKEY); emit(); }
+  function snapshot() { return player ? JSON.parse(JSON.stringify(player)) : null; }
   function errText(e) { return (e && e.message) || String(e); }
   function expOf() { return player ? player.exp : 0; }
 
   return { settings: settings, setPref: setPref, subscribe: subscribe, lsGet: lsGet, lsSet: lsSet, errText: errText, expOf: expOf,
     get: get, asStudent: asStudent, level: level, create: create, rename: rename, isAlive: isAlive, clearDungeon: clearDungeon,
-    energy: energy, takeNewWeek: takeNewWeek, exportData: exportData, importData: importData, reset: reset };
+    energy: energy, takeNewWeek: takeNewWeek, exportData: exportData, importData: importData, reset: reset,
+    adopt: adopt, setOnSaved: setOnSaved, snapshot: snapshot, validPlayer: validPlayer, emit: emit };
 })();

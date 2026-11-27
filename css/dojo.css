@@ -79,3 +79,7 @@ table.grid.mu,table.grid.rank{width:100%;min-width:0}.grid.mu th:first-child{tex
   .dg-run .qtext{font-size:1.9rem}
   .dg-run .dmg{font-size:1.5rem}.dg-run .dmg.crit{font-size:1.8rem}
 }
+.btn.google{background:#fff;color:#1f1f1f;border-color:#dadce0;gap:10px}
+.acct-me{display:flex;align-items:center;gap:10px}.acct-me img{border-radius:50%}.acct-me small{display:block}
+.cf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cf-card{align-items:center;text-align:center}
+.inline-spin{display:inline-block;width:12px;height:12px;border-width:2px;vertical-align:middle}

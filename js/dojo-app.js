@@ -72,7 +72,8 @@ function CreateScreen() {
           <div class="swatches">${QC.ELEMENTS.map(function (x) { return html`<button key=${x.id} class=${'swatch' + (el === x.id ? ' on' : '')} title=${L(x.th, x.en)} aria-label=${L(x.th, x.en)} style=${'background:' + x.color} onClick=${function () { setEl(x.id); sfx('blip'); }}></button>`; })}</div></div>
         <p class="muted small">${L('ทุกเผ่าและธาตุเก่งเท่ากัน แต่ละสัปดาห์จะสุ่มว่าใครชนะทางใครในลานประลอง', 'All races and elements are equally strong. Each week the arena matchups are re-rolled.')}</p>
         <button class="btn gold big" disabled=${!!err || busy} onClick=${create}>${L('สร้างตัวละคร', 'Create character')}</button>
-        <p class="muted tiny">${L('ข้อมูลเก็บในเครื่องนี้เท่านั้น ยังไม่ต้องสมัครสมาชิก', 'Saved on this device only. No sign-up needed.')}</p>
+        <p class="muted tiny">${Cloud.S.status === 'signedin' ? L('ตัวละครจะบันทึกในบัญชีของคุณ', 'Your character will be saved to your account.') : L('ไม่ต้องสมัครก็เล่นได้ (เก็บในเครื่องนี้)', 'No sign-up needed (saved on this device).')}</p>
+        <${AccountBox} create=${true} />
       </div>
     </div></div>`;
 }
@@ -113,7 +114,7 @@ function App() {
   }, []);
   useEffect(function () { if (Store.get() && Store.takeNewWeek()) setUI({ modal: 'week' }); });
   var p = Store.get();
-  if (!p) return html`<div class="dj-app create-app"><${CreateScreen} /><${Toasts} /><${Announcements} /><${ConfirmHost} /></div>`;
+  if (!p) return html`<div class="dj-app create-app">${Cloud.S.status === 'checking' ? html`<${Loading} text=${L('กำลังตรวจสอบบัญชี…', 'Checking your account…')} />` : html`<${CreateScreen} />`}<${Toasts} /><${Announcements} /><${ConfirmHost} /></div>`;
   var page = UI.page;
   var body = page === 'dungeon' ? (UI.run ? html`<${DungeonRun} key=${UI.run.k} d=${Dojo.dungeonById[UI.run.id]} />` : html`<${DungeonPage} />`)
     : page === 'arena' ? html`<${ArenaPage} />` : page === 'board' ? html`<${BoardPage} />` : page === 'settings' ? html`<${SettingsPage} />` : html`<${HomePage} />`;
@@ -123,6 +124,7 @@ function App() {
     <main class="dj-main"><div class="scene" style=${'--scene:' + scene}></div><div class="dj-page">${body}</div></main>
     ${page === 'dungeon' && UI.run ? null : html`<${NavBar} />`}
     ${UI.modal === 'week' ? html`<${WeekModal} onClose=${function () { setUI({ modal: null }); }} />` : null}
+    <${ConflictModal} />
     ${UI.modal === 'rename' ? html`<${RenameModal} onClose=${function () { setUI({ modal: null }); }} />` : null}
     <${Toasts} /><${Announcements} /><${ConfirmHost} /></div>`;
 }
@@ -301,6 +303,40 @@ function BoardPage() {
   </div></section>`;
 }
 
+// ================= ACCOUNT (Math a Day / Google) =================
+function GoogleG() { return html`<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>`; }
+function AccountBox(p) {
+  var c = Cloud.S;
+  if (c.status === 'unavailable') return html`<p class="muted tiny">${L('การเข้าสู่ระบบใช้ได้บนเว็บ questdojorpg.mathaday.app', 'Sign-in works on questdojorpg.mathaday.app')}</p>`;
+  if (c.status === 'checking') return html`<p class="muted small"><span class="spin inline-spin"></span> ${L('กำลังตรวจสอบบัญชี…', 'Checking your account…')}</p>`;
+  if (c.status === 'signedout') return html`<div class="stack acct">
+    <button class="btn google" onClick=${Cloud.signIn}><${GoogleG} /> ${L('เข้าสู่ระบบด้วย Google', 'Sign in with Google')}</button>
+    <p class="muted tiny">${p.create ? L('มีตัวละครในบัญชีอยู่แล้ว? เข้าสู่ระบบเพื่อเล่นต่อ', 'Already have a character? Sign in to continue.') : L('เข้าสู่ระบบเพื่อเก็บตัวละครไว้ในบัญชี เล่นต่อได้ทุกเครื่อง (ใช้บัญชีเดียวกับ Math a Day)', 'Sign in to keep your character in your account and play on any device (your Math a Day account).')}</p></div>`;
+  var me = c.me || {};
+  return html`<div class="stack acct">
+    <div class="acct-me">${me.picture ? html`<img src=${me.picture} alt="" width="36" height="36" referrerpolicy="no-referrer" />` : null}<div><b>${me.name || 'Google'}</b><small class="muted">${c.linked ? L('ตัวละครบันทึกในบัญชีแล้ว', 'Character saved to your account') : L('ยังไม่ได้เชื่อมตัวละครกับบัญชี', 'Character not linked to the account')}</small></div></div>
+    ${c.error ? html`<p class="err">${c.error}</p>` : null}
+    ${!c.linked && Store.get() ? html`<button class="btn gold" onClick=${Cloud.useLocal}>${L('ย้ายตัวละครนี้ขึ้นบัญชี', 'Move this character to my account')}</button>` : null}
+    ${p.create ? null : html`<button class="btn ghost" onClick=${async function () { var ok = await askConfirm({ title: L('ออกจากระบบ?', 'Sign out?'), body: L('ตัวละครถูกเก็บไว้ในบัญชีแล้ว และจะถูกลบออกจากเครื่องนี้ (เข้าสู่ระบบใหม่เพื่อเล่นต่อ)', 'Your character is kept in your account and removed from this device. Sign in again to continue.') }); if (ok) { await Cloud.signOut(); setUI({ page: 'home', run: null }); } }}>${L('ออกจากระบบ', 'Sign out')}</button>`}
+  </div>`;
+}
+function ConflictModal() {
+  var c = Cloud.S.conflict; if (!c) return null;
+  var card = function (pl, label) { var lv = QC.levelFromExp(pl.exp, Dojo.LEVEL_REQS); return html`<div class="panel pad stack center cf-card"><small class="muted">${label}</small><${Hero} student=${{ race: pl.race, element: pl.element }} level=${lv} size=${96} /><b>${pl.nick}</b><small>Lv.${lv} • ${pl.exp} EXP</small></div>`; };
+  if (c.kind === 'upload') return html`<${Modal} title=${L('ย้ายตัวละครขึ้นบัญชี?', 'Move your character to your account?')} onClose=${Cloud.stayOffline} footer=${html`<button class="btn ghost" onClick=${Cloud.stayOffline}>${L('ไว้ทีหลัง', 'Later')}</button><button class="btn gold" onClick=${Cloud.useLocal}>${L('ย้ายขึ้นบัญชี', 'Move it')}</button>`}>
+    <p>${L('บัญชีนี้ยังไม่มีตัวละคร QuestDojo จะย้ายตัวละครในเครื่องนี้ขึ้นบัญชีเลยไหม เล่นต่อได้ทุกเครื่อง', 'This account has no QuestDojo character yet. Move the one on this device so you can play anywhere?')}</p>${card(c.local, L('ในเครื่องนี้', 'This device'))}</${Modal}>`;
+  return html`<${Modal} title=${L('เลือกตัวละคร', 'Choose a character')} onClose=${Cloud.stayOffline}>
+    <p>${L('บัญชีนี้มีตัวละครอยู่แล้ว และในเครื่องนี้ก็มีอีกตัว เลือกตัวที่จะเล่นต่อ ตัวที่ไม่เลือกจะถูกแทนที่', 'Your account and this device hold different characters. Pick one to keep; the other is replaced.')}</p>
+    <div class="cf-grid">${card(c.remote, L('ในบัญชี', 'In your account'))}${card(c.local, L('ในเครื่องนี้', 'On this device'))}</div>
+    <div class="row gap wrap"><button class="btn gold" onClick=${Cloud.useRemote}>${L('ใช้ตัวในบัญชี', 'Use the account one')}</button><button class="btn" onClick=${async function () { var ok = await askConfirm({ title: L('แทนที่ตัวละครในบัญชี?', 'Replace the account character?'), body: L('ตัวละครในบัญชี (' + c.remote.nick + ') จะถูกแทนที่ด้วยตัวในเครื่องนี้ ย้อนกลับไม่ได้', 'The account character (' + c.remote.nick + ') will be replaced by this device\'s. This cannot be undone.'), danger: true }); if (ok) Cloud.useLocal(); }}>${L('ใช้ตัวในเครื่องนี้', 'Use this device\'s')}</button></div></${Modal}>`;
+}
+(function loadAccount() {
+  if (!/(^|\.)mathaday\.app$/.test(location.hostname)) { Cloud.init(); return; }
+  var sc = document.createElement('script'); sc.src = 'https://account.mathaday.app/sdk.js'; sc.async = true;
+  sc.onload = function () { Cloud.init(); }; sc.onerror = function () { Cloud.S.status = 'unavailable'; Store.emit(); };
+  document.head.appendChild(sc);
+})();
+
 // ================= SETTINGS =================
 function SettingsPage() {
   var st = Store.settings(), fileRef = useRef(null);
@@ -336,11 +372,10 @@ function SettingsPage() {
     <label class="switch"><input type="checkbox" checked=${st.screenShakeEnabled} onChange=${function (e) { Store.setPref({ screenShakeEnabled: e.target.checked }); }} />${L('จอสั่นตอนโดนโจมตี', 'Screen shake')}</label>
   </div>
   <div class="panel pad stack"><h3 class="h3">${L('บัญชีและข้อมูล', 'Account & data')}</h3>
-    <p class="small">${L('ตอนนี้ตัวละครเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ถ้าล้างข้อมูลเว็บหรือเปลี่ยนเครื่อง ตัวละครจะหาย ให้กดสำรองข้อมูลไว้', 'Your character is saved in this browser only. Clearing site data or changing device loses it, so keep a backup.')}</p>
+    ${Cloud.S.linked ? null : html`<p class="small">${L('ตอนนี้ตัวละครเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ถ้าล้างข้อมูลเว็บหรือเปลี่ยนเครื่อง ตัวละครจะหาย เข้าสู่ระบบหรือกดสำรองข้อมูลไว้', 'Your character is saved in this browser only. Clearing site data or changing device loses it. Sign in or keep a backup.')}</p>`}
     <div class="row gap wrap"><button class="btn" onClick=${backup}>${L('สำรองข้อมูล', 'Back up')}</button><button class="btn" onClick=${function () { fileRef.current && fileRef.current.click(); }}>${L('กู้คืน', 'Restore')}</button>
       <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${onFile} /></div>
-    <button class="btn" disabled>${L('เข้าสู่ระบบด้วย Google (เร็วๆ นี้)', 'Sign in with Google (soon)')}</button>
-    <p class="muted tiny">${L('เมื่อเปิดระบบเข้าสู่ระบบ จะย้ายตัวละครจากเครื่องนี้ขึ้นบัญชีได้', 'When sign-in opens you can move this character to your account.')}</p>
+    <${AccountBox} />
     <button class="btn danger-ghost" onClick=${wipe}>${L('ลบตัวละคร', 'Delete character')}</button>
   </div>
   <p class="credit">QuestDojo RPG • ${L('ภาคต่อของ QuestClass RPG', 'a QuestClass RPG companion')}</p></section>`;
