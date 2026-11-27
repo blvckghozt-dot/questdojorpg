@@ -83,3 +83,18 @@ table.grid.mu,table.grid.rank{width:100%;min-width:0}.grid.mu th:first-child{tex
 .acct-me{display:flex;align-items:center;gap:10px}.acct-me img{border-radius:50%}.acct-me small{display:block}
 .cf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cf-card{align-items:center;text-align:center}
 .inline-spin{display:inline-block;width:12px;height:12px;border-width:2px;vertical-align:middle}
+/* arena duel */
+.duel-wait{max-width:520px;margin:20px auto}.small-ring{width:90px;height:90px}
+.duel .fighter .hp{width:min(240px,100%)}.duel .matchup{font-size:.78rem}
+.duel-res{display:flex;justify-content:space-around;gap:10px;margin-top:8px;font-weight:700;font-family:var(--f-data)}
+.center-txt{text-align:center;margin:6px 0 0}
+.duel.gk .qtext{font:600 clamp(1.1rem,2.4vw,1.6rem)/1.35 var(--f-body);letter-spacing:0}
+.duel.gk .choice{font:600 clamp(.95rem,1.8vw,1.15rem)/1.3 var(--f-body)}
+.devkey{display:block;word-break:break-all;background:#10162a;border:1px dashed var(--line);border-radius:6px;padding:6px 8px;font-size:.78rem}
+@media (max-width:760px){
+  .duel{gap:6px}.duel .battle-top small{display:none}.duel .stage{padding:4px 2% 6px}
+  .duel .nameplate b{font-size:.95rem}.duel .nameplate small{font-size:.66rem}
+  .duel .choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.duel .choice{padding:8px 10px;font-size:1.2rem;gap:8px}.duel .choice .key{width:28px;height:28px;font-size:.95rem}
+  .duel .qtext{font-size:1.8rem}.duel.gk .qtext{font-size:1.05rem}.duel.gk .choice{font-size:.9rem}
+  .duel .vs{font-size:2rem}
+}
