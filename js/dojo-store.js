@@ -4,8 +4,14 @@
 var Dojo = (function () {
   'use strict';
 
-  // ---------- level curve: QuestClass curve × 2 (Lv.99 = 1,998 EXP) ----------
-  var LEVEL_REQS = QC.defaultRequirements().map(function (v) { return v * 2; });
+  // ---------- level curve: QuestClass curve × 2, last step topped up so Lv.99 = exactly 2,000 EXP ----------
+  var LEVEL_EXP_99 = 2000;
+  var LEVEL_REQS = (function () {
+    var r = QC.defaultRequirements().map(function (v) { return v * 2; });
+    var sum = r.reduce(function (a, b) { return a + b; }, 0);
+    r[r.length - 1] += LEVEL_EXP_99 - sum;
+    return r;
+  })();
 
   // ---------- time (Bangkok) & weeks (reset Monday 00:00) ----------
   var BKK = 7 * 3600 * 1000, DAY = 864e5;
